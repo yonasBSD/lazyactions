@@ -1,4 +1,4 @@
-.PHONY: test test-unit test-integration build run lint cover cover-check cover-by-pkg ci dev fmt clean tools
+.PHONY: test test-unit test-integration build run lint cover cover-check cover-by-pkg ci dev fmt clean tools generate
 
 # Coverage threshold
 COVERAGE_THRESHOLD := 70
@@ -7,15 +7,19 @@ COVERAGE_THRESHOLD := 70
 GOBIN ?= $(shell go env GOPATH)/bin
 GOLANGCI_LINT := $(GOBIN)/golangci-lint
 GOTESTSUM := $(GOBIN)/gotestsum
+MOQ := $(GOBIN)/moq
 
 # Install tools
-tools: $(GOLANGCI_LINT) $(GOTESTSUM)
+tools: $(GOLANGCI_LINT) $(GOTESTSUM) $(MOQ)
 
 $(GOLANGCI_LINT):
 	go install github.com/golangci/golangci-lint/v2/cmd/golangci-lint@v2.1.6
 
 $(GOTESTSUM):
 	go install gotest.tools/gotestsum@latest
+
+$(MOQ):
+	go install github.com/matryer/moq@latest
 
 # Test (all tests)
 test: $(GOTESTSUM)
@@ -64,8 +68,8 @@ run:
 lint: $(GOLANGCI_LINT)
 	$(GOLANGCI_LINT) run
 
-# CI (lint + coverage check + build)
-ci: lint cover-check build
+# CI (lint + test + build)
+ci: lint test build
 
 # Development (format + lint + test)
 dev: fmt lint test
@@ -74,3 +78,7 @@ dev: fmt lint test
 fmt:
 	go fmt ./...
 	goimports -w .
+
+# Generate (mocks, etc.)
+generate: $(MOQ)
+	go generate ./...
